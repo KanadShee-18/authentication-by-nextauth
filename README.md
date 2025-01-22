@@ -193,7 +193,7 @@ export const {
 export { GET, POST } from "@/auth";
 ```
 
-- And also add one more secret in **.env** as your wish:
+- And also add one more secret in **.env** as AUTH_SECRET:
 
 ```
 AUTH_SECRET=asyourwishvalue
