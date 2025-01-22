@@ -41,7 +41,7 @@ DATABASE_URL="postgresql://..........................."
 
 - Add two models User and Account in **schema.prisma** file.
 
-```
+```prisma
 generator client {
   provider = "prisma-client-js"
 }
