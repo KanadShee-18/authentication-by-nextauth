@@ -137,3 +137,66 @@ if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 ---
 
 ## Auth.Js Configuration:
+
+- First we have to install the latest version of next-auth
+
+```
+npm install next-auth@beta
+```
+
+- Now, we have to install one more additional thing **Prisma Adaptor** from Auth.Js so that it can work with prisma.
+
+```
+npm install @auth/prisma-adapter
+```
+
+- Next, we have to make two files:
+
+  1. auth.ts
+  2. auth.config.ts
+
+- The auth.config.ts is created as in auth we can't use prisma as it it is not edge compatible.
+
+```typescript
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
+
+export default {
+  providers: [Google({}), Credentials({})],
+} satisfies NextAuthConfig;
+```
+
+and we will accquire this to **auth.ts** file
+
+```typescript
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/prisma/prisma";
+import authConfig from "@/auth.config";
+
+export const {
+  auth,
+  handlers: { GET, POST },
+  signIn,
+  signOut,
+} = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  ...authConfig,
+});
+```
+
+- Now, we have to make a route which will handle all requests inside app > api > auth > [...nextauth] > route.ts and add a simple line of code here.
+
+```typescript
+export { GET, POST } from "@/auth";
+```
+
+- And also add one more secret in **.env** as your wish:
+
+```
+AUTH_SECRET=asyourwishvalue
+```
+
+---
