@@ -15,6 +15,9 @@
   1. [Credentials function in auth.ts](#credentials-function-for-signin)
   2. [Custom Google Login Button](#google-login-action)
   3. [Custom Github Login Button](#github-login-action)
+- [Callbacks](#callbacks)
+  1. [jwt and session callback](#jwt-and-session-callback)
+  2. [signIn callback](#signin-callback)
 
 ---
 
@@ -860,3 +863,175 @@ export default Socials;
 ### So, we have to done with the credentials and providers authentication.
 
 ---
+
+## Callbacks:
+
+### Callbacks are asynchronous function which help us control what happens when any action is performed.
+
+- First of all, as we are using strategy as "jwt", so we are going to use jwt callback
+
+- So, now we'll make two utility function which will be called inside this jwt callback
+
+```ts
+// data/account.ts
+import { prisma } from "@/prisma/prisma";
+
+export const getAccountByUserId = async (userId: string) => {
+  try {
+    const account = await prisma.account.findFirst({
+      where: {
+        userId: userId,
+      },
+    });
+    return account;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+```
+
+and
+
+```ts
+// data/user.ts
+import { prisma } from "@/prisma/prisma";
+
+export const getUserById = async (id: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+```
+
+- Now, we have to configure our callback and session in **auth.ts** file:
+
+### **"jwt"** and **"session"** callback:
+
+```ts
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/prisma/prisma";
+import authConfig from "@/auth.config";
+import { getUserById } from "@/data/user";
+import { getAccountByUserId } from "./data/account";
+
+export const {
+  auth,
+  handlers: { GET, POST },
+  signIn,
+  signOut,
+} = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  ...authConfig,
+  callbacks: {
+    async jwt({ token }) {
+      if (!token.sub) {
+        return token;
+      }
+
+      const existingUser = await getUserById(token.sub);
+
+      if (!existingUser) return token;
+
+      const existingAccount = await getAccountByUserId(existingUser.id);
+
+      token.isOauth = !!existingAccount;
+      token.name = existingUser.name;
+      token.email = existingUser.email;
+      token.image = existingUser.image;
+
+      return token;
+    },
+    async session({ token, session }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.sub,
+          isOauth: token.isOauth,
+        },
+      };
+    },
+  },
+});
+```
+
+- > NOTE: We do this stuff, as session is accessible in client side but jwt not so we can use user id or image to show their dp or any other stuffs as session is accessible to the client side.
+
+- Now, one more callback is there called **signIn** callback.
+
+  > Use this signIn() callback to control if a user is allowed to sign in.
+
+- So, after adding **signIn** callback our auth.ts file will be:
+
+### **SignIn** callback:
+
+```ts
+import NextAuth from "next-auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/prisma/prisma";
+import authConfig from "@/auth.config";
+import { getUserById } from "@/data/user";
+import { getAccountByUserId } from "./data/account";
+
+export const {
+  auth,
+  handlers: { GET, POST },
+  signIn,
+  signOut,
+} = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  ...authConfig,
+  callbacks: {
+    async signIn({ user, account }) {
+      if (account?.provider !== "credentials") {
+        return true;
+      }
+      const existingUser = await getUserById(user.id ?? "");
+      if (!existingUser?.emailVerified) {
+        return false;
+      }
+      return true;
+    },
+    async jwt({ token }) {
+      if (!token.sub) {
+        return token;
+      }
+
+      const existingUser = await getUserById(token.sub);
+
+      if (!existingUser) return token;
+
+      const existingAccount = await getAccountByUserId(existingUser.id);
+
+      token.isOauth = !!existingAccount;
+      token.name = existingUser.name;
+      token.email = existingUser.email;
+      token.image = existingUser.image;
+
+      return token;
+    },
+    async session({ token, session }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.sub,
+          isOauth: token.isOauth,
+        },
+      };
+    },
+  },
+});
+```
