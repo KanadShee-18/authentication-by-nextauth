@@ -41,7 +41,7 @@ export default function Home() {
           className="opacity-50 w-[250px] h-auto rotate-12"
         />
       </div>
-      <div className="absolute z-[8] w-3/5 -top-1/4 aspect-square rounded-full bg-indigo-400 bg-opacity-30 blur-[140px]" />
+      <div className="absolute z-[8] w-3/5 -top-1/2 aspect-square rounded-full bg-indigo-400 opacity-30 blur-[140px]" />
     </div>
   );
 }
