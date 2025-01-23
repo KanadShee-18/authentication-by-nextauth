@@ -6,6 +6,10 @@
 
 - [Prisma Setup](#set-up-prisma-with-db)
 - [Auth.Js Configuration](#authjs-configuration)
+- [OAuth Providers](#oauth-providers)
+  1. [Google Provider](#google-provider)
+  2. [Github Provider](#github-provider)
+- [Credentials Provider](#credentials-provider)
 
 ---
 
@@ -204,6 +208,8 @@ AUTH_SECRET=asyourwishvalue
 
 ---
 
+## OAuth Providers:
+
 ## Google Provider:
 
 ### Lets complete the Google Provider
@@ -230,6 +236,8 @@ export default {
 
 - In similar way we can add GitHub also:
 
+## GitHub Provider:
+
 ```ts
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
@@ -253,3 +261,21 @@ export default {
 
 - > NOTE: Make sure to add **Homepage URL** and **Callback URL** in getting the secrets for both the providers.
 
+```
+Homepage URL: http://localhost:3000
+Callback URL: http://localhost:3000/api/auth/callback/<provider-name>
+```
+
+- > NOTE: Make sure to change the domain name after deployment
+
+---
+
+## Credentials Provider:
+
+- First we will create a custom sign up page.
+
+- Let's initialize shadcn for our project.
+
+```
+npx shadcn@latest init
+```
