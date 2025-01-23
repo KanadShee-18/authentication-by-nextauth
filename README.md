@@ -58,6 +58,7 @@ model User {
   emailVerified DateTime?
   accounts      Account[]
   password      String?
+  image         String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -84,6 +85,8 @@ model Account {
 }
 
 ```
+
+- > Note: Here make sure to make the password optional as for Google or Github there will be no password.
 
 - Now, run the command to push schemas to db:
 
@@ -200,3 +203,53 @@ AUTH_SECRET=asyourwishvalue
 ```
 
 ---
+
+## Google Provider:
+
+### Lets complete the Google Provider
+
+- > Go to console.cloud.google.com and get the OAuth client id and client secret and add them in **.env** file
+
+```ts
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
+import Credentials from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
+
+export default {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHub({}),
+    Credentials({}),
+  ],
+} satisfies NextAuthConfig;
+```
+
+- In similar way we can add GitHub also:
+
+```ts
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
+import Credentials from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
+
+export default {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    }),
+    Credentials({}),
+  ],
+} satisfies NextAuthConfig;
+```
+
+- > NOTE: Make sure to add **Homepage URL** and **Callback URL** in getting the secrets for both the providers.
+
