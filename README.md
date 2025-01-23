@@ -9,7 +9,8 @@
 - [OAuth Providers](#oauth-providers)
   1. [Google Provider](#google-provider)
   2. [Github Provider](#github-provider)
-- [Credentials Provider](#credentials-provider)
+- [Shadcn Initialization](#shadcn-initialization)
+- [Custom Register Page](#custom-register-page)
 
 ---
 
@@ -270,7 +271,7 @@ Callback URL: http://localhost:3000/api/auth/callback/<provider-name>
 
 ---
 
-## Credentials Provider:
+## Shadcn initialization:
 
 - First we will create a custom sign up page.
 
@@ -279,3 +280,74 @@ Callback URL: http://localhost:3000/api/auth/callback/<provider-name>
 ```
 npx shadcn@latest init
 ```
+
+- Now, we will add some components from shadcn: button, form, card, label etc.
+
+---
+
+## Custom Register Page:
+
+- First, in the app folder create a route for register: app > register > page.tsx
+
+```ts
+import RegisterForm from "@/components/auth/register-form";
+import React from "react";
+
+const RegisterPage = () => {
+  return (
+    <>
+      <RegisterForm />
+    </>
+  );
+};
+
+export default RegisterPage;
+```
+
+- We'll make a client component RegisterForm as we're going to use hooks states etc.
+
+- Inside components dir, create another folder **auth** and make a component called register-form.tsx
+
+```ts
+"use client";
+
+import React from "react";
+
+const RegisterForm = () => {
+  return <div>register-form</div>;
+};
+
+export default RegisterForm;
+```
+
+- Now, make a schemas folders where we'll write zod validation and make a file named index.ts where we'll add our register schema.
+
+```ts
+import * as z from "zod";
+
+export const RegisterSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address",
+  }),
+  name: z.string().min(1, {
+    message: "Name is required.",
+  }),
+  password: z.string().min(6, {
+    message: "Passwords must be at least 6 characters long.",
+  }),
+  confirmPassword: z.string().min(6, {
+    message: "Passwords must be at least 6 characters long.",
+  }),
+});
+```
+
+- Now, we will create some reusable components which we can use in both signin and register form.
+  For ex:
+  Inside @/components/auth,
+  1. auth-header.tsx
+  2. back-button.tsx
+  3. form-error.tsx
+  4. form-success.tsx
+  5. card-wrapper.tsx
+
+- These custom compoenent now will be used in register-form.
