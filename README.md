@@ -6,18 +6,31 @@
 
 - [Prisma Setup](#set-up-prisma-with-db)
 - [Auth.Js Configuration](#authjs-configuration)
+
+---
+
 - [OAuth Providers](#oauth-providers)
   1. [Google Provider](#google-provider)
   2. [Github Provider](#github-provider)
+
+---
+
 - [Shadcn Initialization](#shadcn-initialization)
 - [Custom Register Page](#custom-register-page)
 - [Custom Login Page](#custom-login-page)
   1. [Credentials function in auth.ts](#credentials-function-for-signin)
   2. [Custom Google Login Button](#google-login-action)
   3. [Custom Github Login Button](#github-login-action)
+
+---
+
 - [Callbacks](#callbacks)
   1. [jwt and session callback](#jwt-and-session-callback)
   2. [signIn callback](#signin-callback)
+
+---
+
+- [Middleware](#middlewares)
 
 ---
 
@@ -1035,3 +1048,68 @@ export const {
   },
 });
 ```
+
+---
+
+## Middlewares:
+
+- For setting up middleware, first we have to make a file named as **middleware.ts** file.
+
+- Now, we will make another file named **routes.ts** where we can specify our all private, public and auth routes like this:
+
+```ts
+export const privateRoutes = ["/dashboard"];
+
+export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+
+export const AUTH_LOGIN = "/auth/login";
+```
+
+- Now, in our **middleware.ts** file we can use these routes.
+
+```ts
+import authConfig from "./auth.config";
+import NextAuth from "next-auth";
+import { AUTH_LOGIN, DEFAULT_LOGIN_REDIRECT, privateRoutes } from "@/routes";
+
+const { auth } = NextAuth(authConfig);
+
+export default auth(async (req) => {
+  //   console.log("Middleware called", req.nextUrl.pathname);
+  //   console.log("Logged in or not: ", req.auth);
+  const isLoggedIn = !!req.auth;
+  const { nextUrl } = req;
+
+  const isPrivateRoutes = privateRoutes.includes(nextUrl.pathname);
+  const isAuthRoute = nextUrl.pathname.includes("/auth");
+  const isApiRoute = nextUrl.pathname.includes("/api");
+
+  if (isApiRoute) {
+    return;
+  }
+  if (isLoggedIn && isAuthRoute) {
+    return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+  }
+  if (isAuthRoute && !isLoggedIn) {
+    return;
+  }
+  if (!isLoggedIn && isPrivateRoutes) {
+    return Response.redirect(new URL(AUTH_LOGIN, nextUrl));
+  }
+});
+
+export const config = {
+  matcher: [
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+  ],
+};
+```
+
+- Here the middleware run in all routes matching with the matcher config.
+
+### This way we can setup middleware for our nextauth project.
+
+---
