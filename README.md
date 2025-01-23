@@ -1113,3 +1113,42 @@ export const config = {
 ### This way we can setup middleware for our nextauth project.
 
 ---
+
+## Email Verification:
+
+### Now we have to verify the email for the user. Otherwise the user will register with any invalid email address.
+
+- First we have to add a new model as VerificationToken
+
+```prisma
+model VerificationToken {
+  id String @id @default(cuid())
+  email String
+  token String @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+```
+
+- Now, run two prisma command for this model
+
+```
+npx prisma generate
+```
+
+```
+npx prisma db push
+```
+- First, we have to search that is there any token present, if present check if not create one. So first make this function
+
+
+
+- Now, we have to make a function to generate verification token for us.
+
+
+
+```ts
+// lib/tokens.ts
+
+```

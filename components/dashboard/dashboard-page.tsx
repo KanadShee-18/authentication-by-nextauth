@@ -22,9 +22,9 @@ const Dashboard = ({ name, email, image, id }: UserProps) => {
             height={50}
             className="rounded-full"
           />
+          <div className="w-full h-[1px] bg-slate-600 px-4"></div>
         </CardContent>
       )}
-      <div className="w-full h-[1px] bg-slate-600 px-4"></div>
       <CardContent className="w-full">
         <div className="flex bg-gray-800 rounded-md mt-7 mb-2 justify-between p-3 gap-x-6 text-blue-400 shadow-sm shadow-blue-600">
           <span>ID:</span>
@@ -37,7 +37,7 @@ const Dashboard = ({ name, email, image, id }: UserProps) => {
           <p>{name}</p>
         </div>
       </CardContent>
-      <CardContent>
+      <CardContent className="w-full">
         <div className="flex bg-gray-800 rounded-md mb-2 justify-between p-3 gap-x-6 text-blue-400 shadow-sm shadow-blue-600">
           <span>Email:</span>
           <p>{email}</p>

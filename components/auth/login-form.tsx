@@ -16,12 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CardWrapper from "@/components/auth/card-wrapper";
 import FormError from "@/components/auth/form-error";
+import FormSuccess from "@/components/auth/form-success";
 import * as z from "zod";
 import { login } from "@/actions/login";
 
 const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const form = useForm<z.infer<typeof LoginSchema>>({
     resolver: zodResolver(LoginSchema),
@@ -34,13 +36,17 @@ const LoginForm = () => {
   const handleOnSubmit = async (data: z.infer<typeof LoginSchema>) => {
     setLoading(true);
     login(data).then((res) => {
-      if (res?.error) {
+      if (res.error) {
+        setLoading(false);
         setError(res.error);
-        setLoading(false);
-      } else {
-        setError("");
-        setLoading(false);
+        setSuccess("");
       }
+      if (res.success) {
+        setLoading(false);
+        setError("");
+        setSuccess(res.success);
+      }
+      setLoading(false);
     });
   };
 
@@ -101,6 +107,8 @@ const LoginForm = () => {
             />
           </div>
           {error && <FormError errorMessage={error} />}
+          {success && <FormSuccess successMessage={success} />}
+
           <Button
             type="submit"
             className="w-full bg-blue-600 hover:bg-slate-700 active:bg-blue-500"
