@@ -12,7 +12,7 @@ const BackButton = ({ label, href }: BackButtonProps) => {
   return (
     <Button
       variant={"link"}
-      className="font-normal w-full hover:text-indigo-500"
+      className="w-fit ml-auto hover:text-blue-500 text-muted-foreground"
       size={"sm"}
       asChild
     >

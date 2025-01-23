@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/card";
 import AuthHeader from "@/components/auth/auth-header";
 import BackButton from "@/components/auth/back-button";
+import ForgetPassword from "./forget-password";
+import Socials from "./social-buttons";
 
 interface CardWrapperProps {
   children: React.ReactNode;
@@ -16,6 +18,8 @@ interface CardWrapperProps {
   title: string;
   showSocials: boolean;
   backButtonHref: string;
+  fgtPasswordHref?: string | undefined;
+  fgtPasswordText?: string | undefined;
 }
 
 const CardWrapper = ({
@@ -25,16 +29,27 @@ const CardWrapper = ({
   title,
   showSocials,
   backButtonHref,
+  fgtPasswordHref = "",
+  fgtPasswordText = "",
 }: CardWrapperProps) => {
   return (
-    <Card className="w-10/12 sm:w-3/4 md:w-4/5 lg:w-1/2 xl:w-1/4">
+    <Card className="w-10/12 sm:w-3/4 md:w-1/2 xl:w-1/4 mx-auto">
       <CardHeader>
-        <AuthHeader label={headerLabel} title={title} />
+        <AuthHeader headerLabel={headerLabel} title={title} />
       </CardHeader>
       <CardContent>{children}</CardContent>
-      <CardFooter>
+      <CardFooter className="flex">
+        <ForgetPassword
+          fgtPasswordHref={fgtPasswordHref}
+          fgtPasswordText={fgtPasswordText}
+        />
         <BackButton label={backButtonLabel} href={backButtonHref} />
       </CardFooter>
+      {showSocials && (
+        <CardFooter>
+          <Socials />
+        </CardFooter>
+      )}
     </Card>
   );
 };

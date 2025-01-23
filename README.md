@@ -11,6 +11,10 @@
   2. [Github Provider](#github-provider)
 - [Shadcn Initialization](#shadcn-initialization)
 - [Custom Register Page](#custom-register-page)
+- [Custom Login Page](#custom-login-page)
+  1. [Credentials function in auth.ts](#credentials-function-for-signin)
+  2. [Custom Google Login Button](#google-login-action)
+  3. [Custom Github Login Button](#github-login-action)
 
 ---
 
@@ -287,7 +291,7 @@ npx shadcn@latest init
 
 ## Custom Register Page:
 
-- First, in the app folder create a route for register: app > register > page.tsx
+- First, in the app folder create a route for register: app > auth > register > page.tsx
 
 ```ts
 import RegisterForm from "@/components/auth/register-form";
@@ -344,10 +348,515 @@ export const RegisterSchema = z.object({
 - Now, we will create some reusable components which we can use in both signin and register form.
   For ex:
   Inside @/components/auth,
+
   1. auth-header.tsx
   2. back-button.tsx
   3. form-error.tsx
   4. form-success.tsx
   5. card-wrapper.tsx
+  6. forget-password.tsx
 
-- These custom compoenent now will be used in register-form.
+- These custom compoenent now will be used in register-form or any other component as it needed.
+
+- Create a server action.
+- For that create a new dir as actions in root dir and create a file named register.ts
+
+```ts
+"use server";
+
+import * as z from "zod";
+import { prisma } from "@/prisma/prisma";
+import bcrypt from "bcryptjs";
+import { RegisterSchema } from "@/schemas";
+
+export const register = async (data: z.infer<typeof RegisterSchema>) => {
+  try {
+    const validatedData = RegisterSchema.safeParse(data);
+    if (!validatedData.success) {
+      return {
+        error: "Invalid input data.",
+      };
+    }
+    const { email, name, password, confirmPassword } = validatedData.data;
+
+    if (password !== confirmPassword) {
+      return {
+        error: "Both of the passwords have to be matched.",
+      };
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const userExistance = await prisma.user.findFirst({
+      where: {
+        email,
+      },
+    });
+
+    if (userExistance) {
+      return {
+        error: "User already exists or user email currently in use!",
+      };
+    }
+
+    const lowercaseEmail = email.toLowerCase();
+
+    await prisma.user.create({
+      data: {
+        email: lowercaseEmail,
+        name,
+        password: hashedPassword,
+      },
+    });
+
+    return {
+      success: "User registration successfull.",
+    };
+  } catch (error) {
+    console.log(error);
+    return {
+      error: "Some error occurred while registering!",
+    };
+  }
+};
+```
+
+- Now, we can use this server action in our register component.
+
+- Our final register component will be:
+
+```ts
+"use client";
+
+import React, { useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { RegisterSchema } from "@/schemas";
+import { useForm } from "react-hook-form";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import CardWrapper from "@/components/auth/card-wrapper";
+import FormSuccess from "@/components/auth/form-success";
+import FormError from "@/components/auth/form-error";
+import * as z from "zod";
+import { register } from "@/actions/register";
+
+const RegisterForm = () => {
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const form = useForm<z.infer<typeof RegisterSchema>>({
+    resolver: zodResolver(RegisterSchema),
+    defaultValues: {
+      email: "",
+      name: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
+
+  const handleOnSubmit = async (data: z.infer<typeof RegisterSchema>) => {
+    setLoading(true);
+    register(data).then((res) => {
+      if (res.error) {
+        setLoading(false);
+        setError(res.error);
+        setSuccess("");
+      }
+      if (res.success) {
+        setLoading(false);
+        setError("");
+        setSuccess(res.success);
+      }
+      setLoading(false);
+    });
+  };
+
+  return (
+    <CardWrapper
+      headerLabel="Create an account"
+      title="Register Yourself"
+      backButtonLabel="Already have an account"
+      backButtonHref="/auth/login"
+      fgtPasswordHref="/"
+      fgtPasswordText="Forget Password"
+      showSocials
+    >
+      <Form {...form}>
+        <form
+          action=""
+          onSubmit={form.handleSubmit(handleOnSubmit)}
+          className="space-y-6"
+        >
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={loading}
+                      type="email"
+                      placeholder="Enter email address"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={loading}
+                      type="text"
+                      placeholder="Enter your name"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={loading}
+                      type="password"
+                      placeholder="Enter a strong password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      disabled={loading}
+                      type="password"
+                      placeholder="Confirm your password"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          {success && <FormSuccess successMessage={success} />}
+          {error && <FormError errorMessage={error} />}
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Submitting" : "SIGN UP"}
+          </Button>
+        </form>
+      </Form>
+    </CardWrapper>
+  );
+};
+
+export default RegisterForm;
+```
+
+- > Here in place of loading we also can use useTransition hook of react also.
+
+---
+
+## Custom Login Page:
+
+- First, we've to make login schema.
+
+```ts
+export const LoginSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address",
+  }),
+  password: z.string().min(1, {
+    message: "Please enter a valid password.",
+  }),
+});
+```
+
+- Now we have to make server action called login.ts
+
+```ts
+"use server";
+
+import * as z from "zod";
+import { prisma } from "@/prisma/prisma";
+import { LoginSchema } from "@/schemas";
+import { AuthError } from "next-auth";
+import { signIn } from "@/auth";
+import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
+
+export const login = async (
+  data: z.infer<typeof LoginSchema>,
+  callbackUrl?: string | null
+) => {
+  const validatedData = LoginSchema.parse(data);
+  if (!validatedData) {
+    return {
+      error: "Invalid input data.",
+    };
+  }
+  const { email, password } = validatedData;
+
+  const userExistance = await prisma.user.findFirst({
+    where: {
+      email: email,
+    },
+  });
+
+  if (!userExistance || !userExistance.password || !userExistance.email) {
+    return {
+      error: "User not found. Register yourself first!",
+    };
+  }
+
+  console.log("After user check ......");
+
+  try {
+    await signIn("credentials", {
+      email: userExistance.email,
+      password: password,
+      redirectTo: callbackUrl || DEFAULT_LOGIN_REDIRECT,
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case "CredentialsSignin":
+          return { error: "Invalid Credentials!" };
+        default:
+          return { error: "Please confirm your email address and password" };
+      }
+    }
+    throw error;
+  }
+
+  return {
+    success: "User logged in successfully",
+  };
+};
+```
+
+- Now, we have to complete the credentials login functionality in **auth.ts** file.
+
+## Credentials function for signIn:
+
+```ts
+import Google from "next-auth/providers/google";
+import GitHub from "next-auth/providers/github";
+import Credentials from "next-auth/providers/credentials";
+import type { NextAuthConfig } from "next-auth";
+import { LoginSchema } from "@/schemas";
+import { prisma } from "./prisma/prisma";
+import bcrypt from "bcryptjs";
+
+export default {
+  providers: [
+    Google({
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    }),
+    GitHub({
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    }),
+    Credentials({
+      async authorize(credentials) {
+        const validatedData = LoginSchema.safeParse(credentials);
+        if (!validatedData.success) return null;
+        const { email, password } = validatedData.data;
+        const user = await prisma.user.findFirst({
+          where: {
+            email: email,
+          },
+        });
+        if (!user || !user.password || !user.email) {
+          return null;
+        }
+        const passwordMached = await bcrypt.compare(password, user.password);
+        if (passwordMached) {
+          return user;
+        }
+        return null;
+      },
+    }),
+  ],
+} satisfies NextAuthConfig;
+```
+
+- This way with google and github we have added credentials configuration also.
+
+- Lets build custom buttons for Google and Github login.
+
+- For that first make the actions for those buttons
+
+- ### Google Login Action:
+
+```ts
+// actions > google-login.ts
+"use server";
+
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
+
+export async function GoogleAuthentication() {
+  try {
+    await signIn("google");
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { error: "Google Login Failed!" };
+    }
+    throw error;
+  }
+}
+```
+
+- ### Github Login Action:
+
+```ts
+// actions > github-login.ts
+"use server";
+
+import { signIn } from "@/auth";
+import { AuthError } from "next-auth";
+
+export async function GithubAuthentication() {
+  try {
+    await signIn("github");
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return {
+        error: "Github Authentication failed!",
+      };
+    }
+    throw error;
+  }
+}
+```
+
+- Lets create a component with two buttons Google and Github.
+
+- First we have made a custom Goggle-login button.
+
+```ts
+"use client";
+
+import React from "react";
+import { GoogleAuthentication } from "@/actions/google-login";
+import { useActionState } from "react";
+import { FcGoogle } from "react-icons/fc";
+
+import { Button } from "@/components/ui/button";
+
+const GoogleLogin = () => {
+  const [errorMessageGoogle, dispatchGoogleAction] = useActionState(
+    GoogleAuthentication,
+    undefined
+  );
+  return (
+    <form action={dispatchGoogleAction} className="w-full">
+      <Button className="w-full" variant={"outline"}>
+        <FcGoogle />
+      </Button>
+      <p className="text-rose-400 text-sm mt-5">{errorMessageGoogle}</p>
+    </form>
+  );
+};
+
+export default GoogleLogin;
+```
+
+- and similar way Github-login compoent:
+
+```ts
+"use client";
+
+import React from "react";
+import { GithubAuthentication } from "@/actions/github-login";
+import { useActionState } from "react";
+import { BsGithub } from "react-icons/bs";
+
+import { Button } from "@/components/ui/button";
+
+const GithubLogin = () => {
+  const [errorMessageGithub, dispatchGithubAction] = useActionState(
+    GithubAuthentication,
+    undefined
+  );
+  return (
+    <form action={dispatchGithubAction} className="w-full">
+      <Button className="w-full" variant={"outline"}>
+        <BsGithub />
+      </Button>
+      <p>{errorMessageGithub}</p>
+    </form>
+  );
+};
+
+export default GithubLogin;
+```
+
+- Now, a component named Socials has been made:
+
+```ts
+"use client";
+
+import React from "react";
+import GoogleLogin from "@/components/auth/google-login";
+import GithubLogin from "@/components/auth/github-login";
+
+const Socials = () => {
+  return (
+    <div className="w-full">
+      <hr />
+      <p className="w-full my-6 text-center text-sm text-slate-300">
+        Or, Sign in with
+      </p>
+
+      <div className="w-full flex gap-x-2">
+        <div className="w-1/2">
+          <GoogleLogin />
+        </div>
+        <div className="w-1/2">
+          <GithubLogin />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Socials;
+```
+
+### So, we have to done with the credentials and providers authentication.
+
+---
