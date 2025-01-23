@@ -22,7 +22,6 @@ const Dashboard = ({ name, email, image, id }: UserProps) => {
             height={50}
             className="rounded-full"
           />
-          <div className="w-full h-[1px] bg-slate-600 px-4"></div>
         </CardContent>
       )}
       <CardContent className="w-full">

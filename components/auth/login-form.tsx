@@ -47,6 +47,12 @@ const LoginForm = () => {
         setSuccess(res.success);
       }
       setLoading(false);
+      setTimeout(() => {
+        setSuccess("");
+      }, 5000);
+      setTimeout(() => {
+        setError("");
+      }, 5000);
     });
   };
 

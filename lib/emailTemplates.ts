@@ -2,12 +2,12 @@ export const emailTemplates = {
   VERIFY: (confirmLink: string, body: string) => `
       <div style="background-color: #f4f4f4; padding: 20px; font-family: Arial, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden;">
-          <div style="background-color: #007bff; padding: 15px; color: #ffffff; text-align: center;">
+          <div style="background-color: #282a54; padding: 15px; color: #ffffff; text-align: center;">
             <h2>Verify Your Email</h2>
           </div>
           <div style="padding: 20px; text-align: center;">
             <p>${body}</p>
-            <a href="${confirmLink}" style="display: inline-block; background-color: #007bff; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">Verify Email</a>
+            <a href="${confirmLink}" style="display: inline-block; background-color: #282a54; color: #ffffff; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;">Verify Email</a>
           </div>
         </div>
       </div>

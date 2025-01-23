@@ -7,6 +7,7 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
 import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mailsender";
 
 export const login = async (data: z.infer<typeof LoginSchema>) => {
   const validatedData = LoginSchema.parse(data);
@@ -29,12 +30,22 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
     };
   }
 
-  if (!userExistance.emailVerified){
+  if (!userExistance.emailVerified) {
     const verificationToken = await generateVerificationToken(email);
 
+    const mailResponse = await sendVerificationEmail({
+      email: userExistance.email,
+      token: verificationToken.token,
+      title: "Email Confirmation - NextAuth",
+      body: "Confirm your email by clicking the link below",
+      type: "VERIFY",
+    });
+
+    console.log("Nodemailer response: ", mailResponse);
+
     return {
-      success: "Confirmation email sent successfully!"
-    }
+      success: "Confirmation email sent successfully!",
+    };
   }
 
   try {

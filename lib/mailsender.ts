@@ -57,6 +57,8 @@ export const sendVerificationEmail = async ({
           : "Reset password mail has been sent!",
     };
   } catch (error) {
+    console.log("Nodemailer error: ", error);
+
     return {
       error: "Some error occurred while sending mail",
     };
