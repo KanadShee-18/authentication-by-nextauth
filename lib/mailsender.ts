@@ -29,7 +29,7 @@ export const sendVerificationEmail = async ({
     // Create appropriate link based on the type
     const confirmLink =
       type === "VERIFY"
-        ? `${baseUrl}/auth/confirm-email?token=${token}`
+        ? `${baseUrl}/auth/email-confirmation?token=${token}`
         : type === "RESET"
         ? `${baseUrl}/auth/reset-password?token=${token}`
         : "";

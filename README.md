@@ -1140,15 +1140,228 @@ npx prisma generate
 ```
 npx prisma db push
 ```
+
 - First, we have to search that is there any token present, if present check if not create one. So first make this function
 
+```ts
+// data/verification-tokens.ts
+import { prisma } from "@/prisma/prisma";
 
+export const getVerificationTokenByEmail = async (email: string) => {
+  try {
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: { email },
+    });
+    return verificationToken;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getVerificationTokenByToken = async (token: string) => {
+  try {
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token },
+    });
+    return verificationToken;
+  } catch (error) {
+    return null;
+  }
+};
+```
+
+- These two function is going to use in the upcoming sections.
 
 - Now, we have to make a function to generate verification token for us.
 
+```ts
+// lib/token.ts
+import { v4 as uuidv4 } from "uuid";
+// import crypto from "crypto";
 
+import { prisma } from "@/prisma/prisma";
+import { getVerificationTokenByEmail } from "@/data/verification-tokens";
+
+export const generateVerificationToken = async (email: string) => {
+  const token = uuidv4();
+  const expires = new Date(new Date().getTime() + 3600 * 1000);
+  const existingToken = await getVerificationTokenByEmail(email);
+  if (existingToken) {
+    await prisma.verificationToken.delete({
+      where: {
+        id: existingToken.id,
+      },
+    });
+  }
+  const verificationToken = await prisma.verificationToken.create({
+    data: {
+      email,
+      token,
+      expires,
+    },
+  });
+  return verificationToken;
+};
+```
+
+- Now, we can use this function in our register and login server action.
 
 ```ts
-// lib/tokens.ts
+//actions/register.ts
+await prisma.user.create({
+  data: {
+    email: lowercaseEmail,
+    name,
+    password: hashedPassword,
+  },
+});
 
+const verificationToken = await generateVerificationToken(email);
+// this way after creating the user we can generate the token.
+
+return {
+  success: "Confirmation email has been sent to your email.",
+};
+```
+
+- Similarly, we can do this for login server action also.
+
+### Mailsender (Nodemailer):
+
+> We have to make a function to send email using Nodemailer package.
+
+```ts
+// lib/mailSender.ts
+import nodemailer from "nodemailer";
+import { baseUrl } from "@/lib/url";
+import { emailTemplates } from "@/lib/emailTemplates";
+
+interface EmailSendingProps {
+  email: string;
+  token: string;
+  title: string;
+  body: string;
+  type: "VERIFY" | "RESET" | "TWO_FA";
+}
+
+export const sendVerificationEmail = async ({
+  email,
+  token,
+  title,
+  body,
+  type,
+}: EmailSendingProps) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+
+    // Create appropriate link based on the type
+    const confirmLink =
+      type === "VERIFY"
+        ? `${baseUrl}/auth/confirm-email?token=${token}`
+        : type === "RESET"
+        ? `${baseUrl}/auth/reset-password?token=${token}`
+        : "";
+
+    // Get the HTML template based on the type
+    const html =
+      type === "TWO_FA"
+        ? emailTemplates.TWO_FA(token)
+        : type === "VERIFY"
+        ? emailTemplates.VERIFY(confirmLink, body)
+        : emailTemplates.RESET(confirmLink, body);
+
+    // Send the email
+    await transporter.sendMail({
+      from: `"Next-Auth - by Kanad" <${process.env.MAIL_USER}>`,
+      to: email,
+      subject: title,
+      html,
+    });
+
+    return {
+      success:
+        type === "VERIFY"
+          ? "Confirmation mail has been sent!"
+          : "Reset password mail has been sent!",
+    };
+  } catch (error) {
+    console.log("Nodemailer error: ", error);
+
+    return {
+      error: "Some error occurred while sending mail",
+    };
+  }
+};
+```
+
+- We have made this function dynamic for all our upcoming process for verifying email, resetting password and Two factor authentication.
+
+- Now before signIn callback run we have to check if the user email is verified or not. If yes then proceed else let the user to verify their email first.
+
+```ts
+// actions/login.ts
+// ..............
+if (!userExistance.emailVerified) {
+    const verificationToken = await generateVerificationToken(email);
+
+    const mailResponse = await sendVerificationEmail({
+      email: userExistance.email,
+      token: verificationToken.token,
+      title: "Email Confirmation - NextAuth",
+      body: "Confirm your email by clicking the link below",
+      type: "VERIFY",
+    });
+
+    console.log("Nodemailer response: ", mailResponse);
+
+    return {
+      success: "Confirmation email sent successfully!",
+    };
+  }
+
+  try {
+    await signIn("credentials", {
+      email: userExistance.email,
+      password: password,
+      redirectTo: DEFAULT_LOGIN_REDIRECT,
+    });
+  } catch (error) {
+// .....................
+```
+
+- This way we will restrict the user to verify his email before signin.
+
+- In same way we can send this email after any user register
+
+```ts
+await prisma.user.create({
+  data: {
+    email: lowercaseEmail,
+    name,
+    password: hashedPassword,
+  },
+});
+
+const verificationToken = await generateVerificationToken(email);
+
+// Send the verification email:
+const mailResponse = await sendVerificationEmail({
+  email: verificationToken.email,
+  token: verificationToken.token,
+  title: "Email Confirmation - NextAuth",
+  body: "Confirm your email by clicking this button below!",
+  type: "VERIFY",
+});
+
+console.log("Mailresponse in register: ", mailResponse);
+
+return {
+  success: "Confirmation email has been sent to your email.",
+};
 ```

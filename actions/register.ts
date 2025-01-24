@@ -5,6 +5,7 @@ import { prisma } from "@/prisma/prisma";
 import bcrypt from "bcryptjs";
 import { RegisterSchema } from "@/schemas";
 import { generateVerificationToken } from "@/lib/tokens";
+import { sendVerificationEmail } from "@/lib/mailsender";
 
 export const register = async (data: z.infer<typeof RegisterSchema>) => {
   try {
@@ -47,6 +48,17 @@ export const register = async (data: z.infer<typeof RegisterSchema>) => {
     });
 
     const verificationToken = await generateVerificationToken(email);
+
+    // Send the verification email:
+    const mailResponse = await sendVerificationEmail({
+      email: verificationToken.email,
+      token: verificationToken.token,
+      title: "Email Confirmation - NextAuth",
+      body: "Confirm your email by clicking this button below!",
+      type: "VERIFY",
+    });
+
+    console.log("Mailresponse in register: ", mailResponse);
 
     return {
       success: "Confirmation email has been sent to your email.",
