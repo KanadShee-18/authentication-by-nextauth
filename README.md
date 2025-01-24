@@ -43,6 +43,10 @@
 
 ---
 
+- [Two Factor Authentication(2FA)](#two-factor-authentication)
+
+---
+
 ## Initialize an empty next-js project
 
 ```
@@ -1546,3 +1550,158 @@ export default VerifyEmailForm;
 ---
 
 ## Reset Password:
+
+- For this functionality, we can build a new schema
+
+```prisma
+model PasswordResetToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+```
+
+- Now we have to make some utility function.
+
+```ts
+// data/password-reset-token.ts
+import { prisma } from "@/prisma/prisma";
+
+export const getResetPasswordTokenByEmail = async (email: string) => {
+  try {
+    const passwordRessetToken = await prisma.passwordResetToken.findFirst({
+      where: { email },
+    });
+    return passwordRessetToken;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getPassworResetTokenByToken = async (token: string) => {
+  try {
+    const resetPasswordToken = await prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+    return resetPasswordToken;
+  } catch (error) {
+    return null;
+  }
+};
+```
+
+- Now, we can use these function inside the token.ts file inside lib
+
+```ts
+// lib/tokens.ts
+export const generatePasswordResetToken = async (email: string) => {
+  const token = uuidv4();
+  const expires = new Date(new Date().getTime() + 3600 * 1000);
+
+  const existingToken = await getResetPasswordTokenByEmail(email);
+  if (existingToken) {
+    await prisma.passwordResetToken.delete({
+      where: {
+        id: existingToken.id,
+      },
+    });
+  }
+  const passwordResetToken = await prisma.passwordResetToken.create({
+    data: {
+      email,
+      token,
+      expires,
+    },
+  });
+  return passwordResetToken;
+};
+```
+
+- Now, we can use this password generating token function in reset-password server action
+
+```ts
+"use server";
+
+import * as z from "zod";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/prisma/prisma";
+import { getPassworResetTokenByToken } from "@/data/password-reset-token";
+import { getUserByEmail } from "@/data/user";
+import { ResetPasswordSchema } from "@/schemas";
+
+export const resetPassword = async (
+  data: z.infer<typeof ResetPasswordSchema>
+) => {
+  try {
+    const validatedFields = ResetPasswordSchema.parse(data);
+    if (!validatedFields) {
+      return {
+        error: "Inputs are not valid.",
+      };
+    }
+    const { token, password, confirmNewPassword } = validatedFields;
+    if (password !== confirmNewPassword) {
+      return {
+        error: "Both passwords should be matched!",
+      };
+    }
+    if (!token) {
+      return {
+        error: "Token is required!",
+      };
+    }
+
+    const existingPasswordToken = await getPassworResetTokenByToken(token);
+    if (!existingPasswordToken) {
+      return {
+        error: "Token is not exist!",
+      };
+    }
+    const hasExpired = new Date(existingPasswordToken.expires) < new Date();
+
+    if (hasExpired) {
+      return {
+        error: "Token has been expired!",
+      };
+    }
+    const existingUser = await getUserByEmail(existingPasswordToken.email);
+    if (!existingUser) {
+      return {
+        error: "User not exists.",
+      };
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      where: {
+        id: existingUser.id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+    await prisma.passwordResetToken.delete({
+      where: {
+        id: existingPasswordToken.id,
+      },
+    });
+    return {
+      success: "Password has been reset successfully!",
+    };
+  } catch (error) {
+    return {
+      error: "Something went wrong while resetting password.",
+    };
+  }
+};
+```
+
+- Now, we can use this server action inside the reset-password-form.tsx.
+
+### This way we can reset our password successfully.
+
+---
+
+## TWO Factor Authentication:
