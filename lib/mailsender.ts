@@ -31,7 +31,7 @@ export const sendVerificationEmail = async ({
       type === "VERIFY"
         ? `${baseUrl}/auth/email-confirmation?token=${token}`
         : type === "RESET"
-        ? `${baseUrl}/auth/reset-password?token=${token}`
+        ? `${baseUrl}/auth/new-password?token=${token}`
         : "";
 
     // Get the HTML template based on the type

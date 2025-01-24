@@ -23,3 +23,21 @@ export const LoginSchema = z.object({
     message: "Please enter a valid password.",
   }),
 });
+
+export const ResetSchema = z.object({
+  email: z.string().email({
+    message: "Email is required!",
+  }),
+});
+
+export const ResetPasswordSchema = z.object({
+  token: z.string({
+    message: "Token is required!",
+  }),
+  password: z.string().min(6, {
+    message: "Please enter a valid password.",
+  }),
+  confirmNewPassword: z.string().min(6, {
+    message: "Please enter a valid password.",
+  }),
+});
