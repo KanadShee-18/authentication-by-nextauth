@@ -42,3 +42,46 @@ export const ResetPasswordSchema = z.object({
     message: "Please enter a valid password.",
   }),
 });
+
+export const SettingsSchema = z
+  .object({
+    name: z.optional(z.string()),
+    isTwoFactorEnabled: z.optional(z.boolean()),
+    email: z.optional(z.string().email()),
+    password: z.optional(
+      z
+        .string()
+        .min(6, { message: "Password must be at least 6 characters(s)" })
+    ),
+    newPassword: z.optional(
+      z
+        .string()
+        .min(6, { message: "Password must be at least 6 characters(s)" })
+    ),
+  })
+  .refine(
+    (data) => {
+      if (data.password && !data.newPassword) {
+        return false;
+      }
+
+      return true;
+    },
+    {
+      message: "New Password is required!",
+      path: ["newPassword"],
+    }
+  )
+  .refine(
+    (data) => {
+      if (!data.password && data.newPassword) {
+        return false;
+      }
+
+      return true;
+    },
+    {
+      message: "Password is required!",
+      path: ["Password"],
+    }
+  );

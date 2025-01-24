@@ -1,4 +1,4 @@
-export const privateRoutes = ["/dashboard"];
+export const privateRoutes = ["/dashboard", "/settings"];
 
 export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
 

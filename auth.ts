@@ -56,6 +56,7 @@ export const {
       token.name = existingUser.name;
       token.email = existingUser.email;
       token.image = existingUser.image;
+      token.isTwoFactorEnabled = existingUser.isTwoFactorEnabled;
 
       return token;
     },
@@ -65,7 +66,10 @@ export const {
         user: {
           ...session.user,
           id: token.sub,
+          name: token.name,
+          email: token.email,
           isOauth: token.isOauth,
+          isTwoFactorEnabled: token.isTwoFactorEnabled,
         },
       };
     },
