@@ -8,8 +8,8 @@ export const getAccountByUserId = async (userId: string) => {
       },
     });
     return account;
-  } catch (error) {
-    console.log(error);
+  } catch {
+    // console.log(error);
     return null;
   }
 };

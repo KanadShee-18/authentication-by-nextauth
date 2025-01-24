@@ -4,7 +4,6 @@ import Dashboard from "@/components/dashboard/dashboard-page";
 
 const DashboardPage = async () => {
   const session = await auth();
-  console.log(session);
   const user = session?.user;
 
   return (

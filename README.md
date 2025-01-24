@@ -1705,3 +1705,282 @@ export const resetPassword = async (
 ---
 
 ## TWO Factor Authentication:
+
+- First we have to add and do some changes in our **schema.prisma** file
+
+```prisma
+model User {
+  id                    String                 @id @default(cuid())
+  name                  String?
+  email                 String                 @unique
+  emailVerified         DateTime?
+  accounts              Account[]
+  password              String?
+  image                 String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  isTwoFactorEnabled    Boolean                @default(false)
+  twoFactorConfirmation TwoFactorConfirmation?
+}
+
+model TwoFactorToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+}
+
+model TwoFactorConfirmation {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+}
+
+```
+
+- These changes has been done in schema.
+
+- > Note: Now after changing schemas don't forget to run:
+
+```
+npx prisma generate
+```
+
+```
+npx prisma db push
+```
+
+- Now, lets create a utility file for two factor token:
+
+```tsx
+// @/data/two-factor-token.ts
+import { prisma } from "@/prisma/prisma";
+
+export const getTwoFactorTokenByToken = async (token: string) => {
+  try {
+    const twoFactorToken = await prisma.twoFactorToken.findUnique({
+      where: { token },
+    });
+    return twoFactorToken;
+  } catch {
+    return null;
+  }
+};
+
+export const getTwoFactorTokenByEmail = async (email: string) => {
+  try {
+    const twoFactorToken = await prisma.twoFactorToken.findFirst({
+      where: { email },
+    });
+    return twoFactorToken;
+  } catch {
+    return null;
+  }
+};
+```
+
+- Now, one more utility function is needed to know about two factor confirmation for an user.
+
+```ts
+import { prisma } from "@/prisma/prisma";
+
+export const getTwoFactorConfirmationByUserId = async (userId: string) => {
+  try {
+    const twoFactorConfirmation = await prisma.twoFactorConfirmation.findUnique(
+      {
+        where: { userId },
+      }
+    );
+    return twoFactorConfirmation;
+  } catch {
+    return null;
+  }
+};
+```
+
+- Now, we have to make a function in tokens.ts in lib which will be used in server action.
+
+```ts
+export const generateTwoFactorToken = async (email: string) => {
+  const token = crypto.randomInt(100_000, 1_000_000).toString();
+  const expires = new Date(new Date().getTime() + 3600 * 1000);
+
+  const existingToken = await getTwoFactorTokenByEmail(email);
+  if (existingToken) {
+    await prisma.twoFactorToken.delete({
+      where: {
+        id: existingToken.id,
+      },
+    });
+  }
+  const twoFactorToken = await prisma.twoFactorToken.create({
+    data: {
+      email,
+      token,
+      expires,
+    },
+  });
+  return twoFactorToken;
+};
+```
+
+- In **mailSender.ts** we have configured email template for 2FA.
+
+- Now, we'll modify our **login.ts** server action and **auth.ts** file.
+
+```ts
+// @/actions/login.ts
+    return {
+      success: "Confirmation email sent successfully!",
+    };
+  }
+
+  if (userExistance.isTwoFactorEnabled && userExistance.email) {
+    if (code) {
+      const twoFactorToken = await getTwoFactorTokenByEmail(
+        userExistance.email
+      );
+      if (!twoFactorToken) {
+        return {
+          error: "Invalid Code!",
+        };
+      }
+      if (twoFactorToken.token !== code) {
+        return {
+          error: "Invalid Code!",
+        };
+      }
+      const hasExpired = new Date(twoFactorToken.expires) < new Date();
+      if (hasExpired) {
+        return {
+          error: "Two factor code has been expired!",
+        };
+      }
+
+      await prisma.twoFactorToken.delete({
+        where: {
+          id: twoFactorToken.id,
+        },
+      });
+
+      const existingConfirmation = await getTwoFactorConfirmationByUserId(
+        userExistance.id
+      );
+
+      if (existingConfirmation) {
+        await prisma.twoFactorConfirmation.delete({
+          where: { id: existingConfirmation.id },
+        });
+      }
+
+      await prisma.twoFactorConfirmation.create({
+        data: {
+          userId: userExistance.id,
+        },
+      });
+    } else {
+      const twoFactorToken = await generateTwoFactorToken(email);
+      await sendVerificationEmail({
+        email: twoFactorToken.email,
+        token: twoFactorToken.token,
+        title: "Two Factor Authentication - NextAuth",
+        body: "Copy the 6-digit code below and paste it",
+        type: "TWO_FA",
+      });
+      return {
+        twoFactor: true,
+      };
+    }
+  }
+```
+
+- Here, we're returning **twoFactor: true** to the frontEnd so that we can render a form to enter two factor code.
+
+- These porition of code is modified in login.ts file and in signIn callback:
+
+```ts
+async signIn({ user, account }) {
+      if (account?.provider !== "credentials") {
+        return true;
+      }
+      const existingUser = await getUserById(user.id ?? "");
+      if (!existingUser?.emailVerified) {
+        return false;
+      }
+      if (existingUser.isTwoFactorEnabled) {
+        const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
+          existingUser.id
+        );
+        if (!twoFactorConfirmation) return false;
+
+        await prisma.twoFactorConfirmation.delete({
+          where: {
+            id: twoFactorConfirmation.id,
+          },
+        });
+      }
+      return true;
+},
+```
+
+- Here is a diragram how its working
+
+```
+User logs in
+   |
+   v
+Check if Two-Factor Authentication (2FA) is enabled
+   |
+   +---- YES -----> Generate 2FA token and send email with the 6-digit code
+   |                   |
+   |                   v
+   |         Return: { twoFactor: true }
+   |
+   +---- NO -------> Validate credentials
+                        |
+                        v
+           Login success if credentials are valid
+                        |
+                        v
+             Trigger `signIn` callback
+                        |
+                        v
+        Check if `emailVerified` in `signIn` callback
+                        |
+                        +---- NO -------> Deny login
+                        |
+                        +---- YES ------> Continue to 2FA check
+                                              |
+                                              v
+        Check if 2FA confirmation exists in `signIn` callback
+                        |
+                        +---- NO -------> Deny login
+                        |
+                        +---- YES ------> Delete 2FA confirmation
+                                              |
+                                              v
+                                        Login success
+
+If 2FA is enabled and user submits code:
+   |
+   v
+Validate 2FA code
+   |
+   +---- Code invalid -> Return: { error: "Invalid Code!" }
+   |
+   +---- Code expired -> Return: { error: "Two-factor code has expired!" }
+   |
+   +---- Code valid -----> Check for existing 2FA confirmation
+                               |
+                               v
+         Delete existing 2FA confirmation (if any)
+                               |
+                               v
+         Create a new 2FA confirmation for the user
+                               |
+                               v
+                         Login success
+
+```

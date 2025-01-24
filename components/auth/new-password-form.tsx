@@ -157,6 +157,7 @@ import FormSuccess from "@/components/auth/form-success";
 import * as z from "zod";
 import { useSearchParams } from "next/navigation";
 import { resetPassword } from "@/actions/resetPassword";
+import { BeatLoader } from "react-spinners";
 
 const NewPasswordForm = () => {
   const searchParams = useSearchParams();
@@ -267,7 +268,13 @@ const NewPasswordForm = () => {
 
 export default function NewPasswordFormWithSuspense() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div>
+          <BeatLoader color="pink" />
+        </div>
+      }
+    >
       <NewPasswordForm />
     </Suspense>
   );

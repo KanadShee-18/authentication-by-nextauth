@@ -6,8 +6,16 @@ import { LoginSchema } from "@/schemas";
 import { AuthError } from "next-auth";
 import { signIn } from "@/auth";
 import { DEFAULT_LOGIN_REDIRECT } from "@/routes";
-import { generateVerificationToken } from "@/lib/tokens";
+import {
+  generateVerificationToken,
+  generateTwoFactorToken,
+} from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mailsender";
+import {
+  getTwoFactorTokenByEmail,
+  getTwoFactorTokenByToken,
+} from "@/data/two-factor-token";
+import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation";
 
 export const login = async (data: z.infer<typeof LoginSchema>) => {
   const validatedData = LoginSchema.parse(data);
@@ -16,7 +24,7 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
       error: "Invalid input data.",
     };
   }
-  const { email, password } = validatedData;
+  const { email, password, code } = validatedData;
 
   const userExistance = await prisma.user.findFirst({
     where: {
@@ -33,7 +41,7 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
   if (!userExistance.emailVerified) {
     const verificationToken = await generateVerificationToken(email);
 
-    const mailResponse = await sendVerificationEmail({
+    await sendVerificationEmail({
       email: userExistance.email,
       token: verificationToken.token,
       title: "Email Confirmation - NextAuth",
@@ -41,11 +49,69 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
       type: "VERIFY",
     });
 
-    console.log("Nodemailer response: ", mailResponse);
+    // console.log("Nodemailer response: ", mailResponse);
 
     return {
       success: "Confirmation email sent successfully!",
     };
+  }
+
+  if (userExistance.isTwoFactorEnabled && userExistance.email) {
+    if (code) {
+      const twoFactorToken = await getTwoFactorTokenByEmail(
+        userExistance.email
+      );
+      if (!twoFactorToken) {
+        return {
+          error: "Invalid Code!",
+        };
+      }
+      if (twoFactorToken.token !== code) {
+        return {
+          error: "Invalid Code!",
+        };
+      }
+      const hasExpired = new Date(twoFactorToken.expires) < new Date();
+      if (hasExpired) {
+        return {
+          error: "Two factor code has been expired!",
+        };
+      }
+
+      await prisma.twoFactorToken.delete({
+        where: {
+          id: twoFactorToken.id,
+        },
+      });
+
+      const existingConfirmation = await getTwoFactorConfirmationByUserId(
+        userExistance.id
+      );
+
+      if (existingConfirmation) {
+        await prisma.twoFactorConfirmation.delete({
+          where: { id: existingConfirmation.id },
+        });
+      }
+
+      await prisma.twoFactorConfirmation.create({
+        data: {
+          userId: userExistance.id,
+        },
+      });
+    } else {
+      const twoFactorToken = await generateTwoFactorToken(email);
+      await sendVerificationEmail({
+        email: twoFactorToken.email,
+        token: twoFactorToken.token,
+        title: "Two Factor Authentication - NextAuth",
+        body: "Copy the 6-digit code below and paste it",
+        type: "TWO_FA",
+      });
+      return {
+        twoFactor: true,
+      };
+    }
   }
 
   try {
