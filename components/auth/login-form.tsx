@@ -62,7 +62,7 @@ const LoginForm = () => {
       title="Sign In"
       backButtonLabel="Don't have an account"
       backButtonHref="/auth/register"
-      fgtPasswordHref="/"
+      fgtPasswordHref="/auth/reset"
       fgtPasswordText="Forget Password"
       showSocials
     >

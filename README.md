@@ -15,7 +15,7 @@
 
 ---
 
-- [Shadcn Initialization](#shadcn-initialization)
+- [ShadCn Initialization](#shadcn-initialization)
 - [Custom Register Page](#custom-register-page)
 - [Custom Login Page](#custom-login-page)
   1. [Credentials function in auth.ts](#credentials-function-for-signin)
@@ -31,6 +31,15 @@
 ---
 
 - [Middleware](#middlewares)
+
+---
+
+- [Email Verification](#email-verification)
+  1. [MailSender-Nodemailer](#mailsender-nodemailer)
+
+---
+
+- [Reset Password](#reset-password)
 
 ---
 
@@ -1365,3 +1374,175 @@ return {
   success: "Confirmation email has been sent to your email.",
 };
 ```
+
+- Now, we have to make a server action to verify our email.
+
+- First lets make two utility function that needed for this.
+  1. getVerificationTokenByToken and
+  2. getUserByEmail
+
+```ts
+//data/verification-tokens.ts
+export const getVerificationTokenByToken = async (token: string) => {
+  try {
+    const verificationToken = await prisma.verificationToken.findUnique({
+      where: { token },
+    });
+    return verificationToken;
+  } catch (error) {
+    return null;
+  }
+};
+```
+
+and
+
+```ts
+// data/user.ts
+export const getUserByEmail = async (email: string) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+    return user;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
+```
+
+- Now, we can use these two utulity in our email-verification server action.
+
+```ts
+// action/email-verification.ts
+"use server";
+
+import { prisma } from "@/prisma/prisma";
+import { getVerificationTokenByToken } from "@/data/verification-tokens";
+import { getUserByEmail } from "@/data/user";
+
+export const verifyEmailToken = async (token: string) => {
+  const existingToken = await getVerificationTokenByToken(token);
+
+  if (!existingToken) {
+    return {
+      error: "Token does not exist!",
+    };
+  }
+
+  const hasExpired = new Date(existingToken.expires) < new Date();
+
+  if (hasExpired) {
+    return {
+      error: "Token has been expired!",
+    };
+  }
+
+  const existingUser = await getUserByEmail(existingToken.email);
+
+  if (!existingUser) {
+    return {
+      error: "User doesn't exist",
+    };
+  }
+
+  await prisma.user.update({
+    where: {
+      id: existingUser.id,
+    },
+    data: {
+      emailVerified: new Date(),
+      email: existingToken.email,
+    },
+  });
+  await prisma.verificationToken.delete({
+    where: {
+      id: existingToken.id,
+    },
+  });
+
+  return {
+    success: "Email has been verified!",
+  };
+};
+```
+
+- Now we've to make a custom email-verification form page
+
+```tsx
+"use client";
+
+import { BeatLoader } from "react-spinners";
+import BackButton from "./back-button";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
+import { verifyEmailToken } from "@/actions/email-verification";
+import FormSuccess from "./form-success";
+import FormError from "./form-error";
+
+const VerifyEmailForm = () => {
+  const searchParams = useSearchParams();
+  const token = searchParams.get("token");
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const onSubmit = useCallback(() => {
+    if (!token) {
+      setError("Missing token!");
+      return;
+    }
+    verifyEmailToken(token)
+      .then((res) => {
+        if (res.success) {
+          setSuccess(res?.success);
+        }
+        if (res.error) {
+          setError(res?.error);
+        }
+      })
+      .catch(() => {
+        setError("Something went wrong. Retry again.");
+      });
+  }, [token]);
+
+  useEffect(() => {
+    onSubmit();
+  }, [onSubmit]);
+
+  return (
+    <div className="h-screen w-full flex items-center justify-center">
+        <h1 className="text-3xl bg-gradient-to-r from-rose-500 via-blue-500 to-purple-500 bg-clip-text text-transparent bg-slate-900 p-3 rounded-lg shadow-md shadow-slate-950 text-nowrap font-semibold">
+          Email Confirmation
+        </h1>
+        <div className="flex flex-col space-y-4">
+          <p className="text-indigo-500 text-center font-medium animate-pulse">
+            Confirming your email{" "}
+          </p>
+          {!success && !error && (
+            <div className="flex items-center justify-center">
+              <BeatLoader color="#aac7ff" />
+            </div>
+          )}
+          {success && <FormSuccess successMessage={success} />}
+          {error && <FormError errorMessage={error} />}
+        </div>
+        <BackButton label="Back to login" href="/auth/login" />
+      </div>
+    </div>
+  );
+};
+
+export default VerifyEmailForm;
+```
+
+- > We've use this form inside app > auth > email-confirmation > page.tsx
+
+### So, this way we can verify our email.
+
+---
+
+## Reset Password:

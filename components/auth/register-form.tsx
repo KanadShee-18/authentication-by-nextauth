@@ -58,7 +58,7 @@ const RegisterForm = () => {
       title="Register Yourself"
       backButtonLabel="Already have an account"
       backButtonHref="/auth/login"
-      fgtPasswordHref="/"
+      fgtPasswordHref="/auth/reset"
       fgtPasswordText="Forget Password"
       showSocials
     >
