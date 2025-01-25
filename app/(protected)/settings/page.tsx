@@ -194,11 +194,12 @@ const SettingsPage = () => {
                       </FormItem>
                     )}
                   />
+                  <div className="w-full h-[1px] bg-slate-700" />
                   <FormField
                     control={form.control}
                     name="isTwoFactorEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row gap-x-4 items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <FormItem className="flex flex-row gap-x-4 items-center justify-between rounded-lg border p-3 shadow-sm shadow-blue-600">
                         <div className="-space-y-0.5">
                           <FormLabel className="text-blue-500">
                             Two Factor Authentication

@@ -81,10 +81,13 @@ const VerifyEmailForm = () => {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
+  const [loading, setLoading] = useState(false);
+
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
   const onSubmit = useCallback(() => {
+    setLoading(true);
     if (!token) {
       setError("Missing token!");
       return;
@@ -101,6 +104,7 @@ const VerifyEmailForm = () => {
       .catch(() => {
         setError("Something went wrong. Retry again.");
       });
+    setLoading(false);
   }, [token]);
 
   useEffect(() => {
@@ -117,8 +121,12 @@ const VerifyEmailForm = () => {
           Email Confirmation
         </h1>
         <div className="flex flex-col space-y-4">
-          <p className="text-indigo-500 text-center font-medium animate-pulse">
-            Confirming your email{" "}
+          <p
+            className={`text-indigo-500 text-center font-medium ${
+              loading && "animate-pulse"
+            }`}
+          >
+            {loading ? "Confirming your email" : "Email has been confirmed!"}
           </p>
           {!success && !error && (
             <div className="flex items-center justify-center">
