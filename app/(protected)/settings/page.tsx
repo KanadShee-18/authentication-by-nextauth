@@ -39,43 +39,48 @@ const SettingsPage = () => {
 
   const form = useForm<z.infer<typeof SettingsSchema>>({
     resolver: zodResolver(SettingsSchema),
+
     defaultValues: {
-      name: user?.name || undefined,
-      email: user?.email || undefined,
-      password: undefined,
-      newPassword: undefined,
+      name: user?.name || "",
+      email: user?.email || "",
+      password: "",
+      newPassword: "",
       isTwoFactorEnabled: user?.isTwoFactorEnabled || undefined,
     },
   });
 
   useEffect(() => {
     form.reset({
-      name: user?.name || undefined,
+      name: user?.name || "",
+      email: user?.email || "",
+      password: "",
+      newPassword: "",
+      isTwoFactorEnabled: user?.isTwoFactorEnabled,
     });
   }, [user, form]);
 
   const onSubmit = (data: z.infer<typeof SettingsSchema>) => {
     setLoading(true);
-    console.log(data);
+    console.log("Updated data comes: ", data);
 
-    // settings(data)
-    //   .then((data) => {
-    //     if (data?.error) {
-    //       setError(data.error);
-    //     }
-    //     if (data?.success) {
-    //       update();
-    //       setSuccess(data.success);
-    //     }
-    //     setLoading(false);
-    //     setTimeout(() => {
-    //       setSuccess("");
-    //     }, 5000);
-    //     setTimeout(() => {
-    //       setError("");
-    //     }, 5000);
-    //   })
-    //   .catch(() => setError("Something went wrong!"));
+    settings(data)
+      .then((data) => {
+        if (data?.error) {
+          setError(data.error);
+        }
+        if (data?.success) {
+          update();
+          setSuccess(data.success);
+        }
+        setLoading(false);
+        setTimeout(() => {
+          setSuccess("");
+        }, 5000);
+        setTimeout(() => {
+          setError("");
+        }, 5000);
+      })
+      .catch(() => setError("Something went wrong!"));
   };
 
   if (!user) {
@@ -108,6 +113,7 @@ const SettingsPage = () => {
                       <Input
                         {...field}
                         type="text"
+                        value={field.value}
                         placeholder={"John Doe"}
                         disabled={loading}
                         className="shadow-sm shadow-blue-600"
@@ -117,94 +123,109 @@ const SettingsPage = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-blue-500">Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="email"
-                        placeholder={"johndoe@gmail.com"}
-                        disabled={loading}
-                        className="shadow-sm shadow-blue-600"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-rose-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-blue-500">Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder={"jaeur#@!"}
-                        disabled={loading}
-                        className="shadow-sm shadow-blue-600"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-rose-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-blue-500">
-                      New Password
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="password"
-                        placeholder={"eroihv345$^."}
-                        disabled={loading}
-                        className="shadow-sm shadow-blue-600"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-rose-400" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="isTwoFactorEnabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row gap-x-4 items-center justify-between rounded-lg border p-3 shadow-sm">
-                    <div className="-space-y-0.5">
-                      <FormLabel className="text-blue-500">
-                        Two Factor Authentication
-                      </FormLabel>
-                      <FormDescription className="text-xs">
-                        Enable two factor authentication for your account
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        disabled={loading}
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-rose-400" />
-                  </FormItem>
-                )}
-              />
+              {user?.isOauth === false && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-500">Email</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="email"
+                            value={field.value}
+                            placeholder={"johndoe@gmail.com"}
+                            disabled={loading}
+                            className="shadow-sm shadow-blue-600"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-rose-400" />
+                      </FormItem>
+                    )}
+                  />
+
+                  <hr />
+                  <p className="text-sm text-indigo-300 tracking-wider">
+                    Want to change password?
+                  </p>
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-500">
+                          Current Password
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            value={field.value}
+                            placeholder={"jaeur#@!"}
+                            disabled={loading}
+                            className="shadow-sm shadow-blue-600"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-rose-400" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-blue-500">
+                          New Password
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            type="password"
+                            value={field.value}
+                            placeholder={"eroihv345$^."}
+                            disabled={loading}
+                            className="shadow-sm shadow-blue-600"
+                          />
+                        </FormControl>
+                        <FormMessage className="text-rose-400" />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isTwoFactorEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row gap-x-4 items-center justify-between rounded-lg border p-3 shadow-sm">
+                        <div className="-space-y-0.5">
+                          <FormLabel className="text-blue-500">
+                            Two Factor Authentication
+                          </FormLabel>
+                          <FormDescription className="text-xs">
+                            Enable two factor authentication for your account
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            disabled={loading}
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage className="text-rose-400" />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
             </div>
             {success && <FormSuccess successMessage={success} />}
             {error && <FormError errorMessage={error} />}
             <Button
               type="submit"
+              disabled={loading}
               className="w-full bg-blue-700 text-white tracking-wider hover:bg-slate-900 hover:shadow-sm hover:shadow-blue-600"
             >
               {loading ? "SAVING" : "SAVE"}

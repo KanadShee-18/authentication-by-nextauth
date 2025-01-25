@@ -6,7 +6,7 @@ import { getVerificationTokenByEmail } from "@/data/verification-tokens";
 import { getResetPasswordTokenByEmail } from "@/data/password-reset-token";
 import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
 
-export const generateVerificationToken = async (email: string) => {
+export const generateVerificationToken = async (email: string, userId: string) => {
   const token = uuidv4();
   const expires = new Date(new Date().getTime() + 5 * 60 * 1000);
   const existingToken = await getVerificationTokenByEmail(email);
@@ -21,6 +21,7 @@ export const generateVerificationToken = async (email: string) => {
     data: {
       email,
       token,
+      userId,
       expires,
     },
   });

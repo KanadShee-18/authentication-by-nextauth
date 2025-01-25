@@ -39,7 +39,7 @@ export const register = async (data: z.infer<typeof RegisterSchema>) => {
 
     const lowercaseEmail = email.toLowerCase();
 
-    await prisma.user.create({
+    const createdUser = await prisma.user.create({
       data: {
         email: lowercaseEmail,
         name,
@@ -47,7 +47,7 @@ export const register = async (data: z.infer<typeof RegisterSchema>) => {
       },
     });
 
-    const verificationToken = await generateVerificationToken(email);
+    const verificationToken = await generateVerificationToken(email, createdUser.id);
 
     // Send the verification email:
     const mailResponse = await sendVerificationEmail({

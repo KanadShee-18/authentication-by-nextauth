@@ -2,10 +2,12 @@
 
 import { UserInfo } from "@/components/user-info";
 import { useCurrentUser } from "@/hooks/user-current-user";
-import React from "react";
+import React, { useEffect } from "react";
 
 const ClientPage = () => {
   const user = useCurrentUser();
+
+  useEffect(() => {}, [user]);
 
   return (
     <div className="w-full max-w-md">

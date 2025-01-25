@@ -2,10 +2,14 @@
 
 import { prisma } from "@/prisma/prisma";
 import { getVerificationTokenByToken } from "@/data/verification-tokens";
-import { getUserByEmail } from "@/data/user";
+import { getUserById } from "@/data/user";
 
 export const verifyEmailToken = async (token: string) => {
+  console.log("suppose wfwf");
+
   const existingToken = await getVerificationTokenByToken(token);
+
+  console.log("Existing token: ", existingToken);
 
   if (!existingToken) {
     return {
@@ -21,7 +25,9 @@ export const verifyEmailToken = async (token: string) => {
     };
   }
 
-  const existingUser = await getUserByEmail(existingToken.email);
+  const existingUser = await getUserById(existingToken.userId);
+
+  console.log("Existing user: ", existingUser);
 
   if (!existingUser) {
     return {
@@ -29,7 +35,7 @@ export const verifyEmailToken = async (token: string) => {
     };
   }
 
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: {
       id: existingUser.id,
     },
@@ -38,6 +44,8 @@ export const verifyEmailToken = async (token: string) => {
       email: existingToken.email,
     },
   });
+  console.log("Updated user: ", updatedUser);
+
   await prisma.verificationToken.delete({
     where: {
       id: existingToken.id,
