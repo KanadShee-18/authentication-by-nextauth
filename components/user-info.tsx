@@ -43,14 +43,18 @@ export const UserInfo = ({ label, user }: UserInfoProps) => {
             {JSON.stringify(user?.isOauth)}
           </p>
         </div>
-        <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm shadow-blue-700">
-          <p className="text-sm font-medium text-muted-foreground">
-            Two Factor Enabled:
-          </p>
-          <Badge variant={user?.isTwoFactorEnabled ? "success" : "destructive"}>
-            {user?.isTwoFactorEnabled == false ? "OFF" : "ON"}
-          </Badge>
-        </div>
+        {!user?.isOauth && (
+          <div className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm shadow-blue-700">
+            <p className="text-sm font-medium text-muted-foreground">
+              Two Factor Enabled:
+            </p>
+            <Badge
+              variant={user?.isTwoFactorEnabled ? "success" : "destructive"}
+            >
+              {user?.isTwoFactorEnabled == false ? "OFF" : "ON"}
+            </Badge>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

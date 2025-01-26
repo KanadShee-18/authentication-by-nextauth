@@ -39,7 +39,10 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
   }
 
   if (!userExistance.emailVerified) {
-    const verificationToken = await generateVerificationToken(email, userExistance.id);
+    const verificationToken = await generateVerificationToken(
+      email,
+      userExistance.id
+    );
 
     await sendVerificationEmail({
       email: userExistance.email,
@@ -48,9 +51,6 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
       body: "Confirm your email by clicking the link below",
       type: "VERIFY",
     });
-
-    // console.log("Nodemailer response: ", mailResponse);
-
     return {
       success: "Confirmation email sent successfully!",
     };

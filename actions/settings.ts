@@ -13,8 +13,6 @@ export const settings = async (values: z.infer<typeof SettingsSchema>) => {
   try {
     const user = await currentUser();
 
-    console.log("Values in server: ", values);
-
     if (!user) {
       return {
         error: "Unauthorized!",
@@ -111,7 +109,6 @@ export const settings = async (values: z.infer<typeof SettingsSchema>) => {
       success: "Settings updated!",
     };
   } catch (error) {
-    console.log("Error in setting updation: ", error);
     return {
       error: "Something went wrong!",
     };

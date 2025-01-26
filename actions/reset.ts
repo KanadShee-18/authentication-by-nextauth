@@ -20,8 +20,6 @@ export const reset = async (data: z.infer<typeof ResetSchema>) => {
 
   const existingUser = await getUserByEmail(email);
 
-  console.log(existingUser);
-
   if (!existingUser) {
     return {
       error: "User not exist with this email.",

@@ -6,11 +6,7 @@ import { getUserById } from "@/data/user";
 
 export const verifyEmailToken = async (token: string) => {
   try {
-    console.log("suppose wfwf");
-
     const existingToken = await getVerificationTokenByToken(token);
-
-    console.log("Existing token: ", existingToken);
 
     if (!existingToken) {
       return {
@@ -28,8 +24,6 @@ export const verifyEmailToken = async (token: string) => {
 
     const existingUser = await getUserById(existingToken.userId);
 
-    console.log("Existing user: ", existingUser);
-
     if (!existingUser) {
       return {
         error: "User doesn't exist",
@@ -45,7 +39,6 @@ export const verifyEmailToken = async (token: string) => {
         email: existingToken.email,
       },
     });
-    console.log("Updated user: ", updatedUser);
 
     await prisma.verificationToken.delete({
       where: {

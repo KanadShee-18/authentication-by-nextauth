@@ -31,8 +31,6 @@ import { toast } from "sonner";
 const SettingsPage = () => {
   const { update } = useSession();
   const user = useCurrentUser();
-  console.log(user);
-
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState("");
@@ -62,8 +60,6 @@ const SettingsPage = () => {
 
   const onSubmit = (data: z.infer<typeof SettingsSchema>) => {
     setLoading(true);
-    console.log("Updated data comes: ", data);
-
     settings(data)
       .then((data) => {
         if (data?.error) {

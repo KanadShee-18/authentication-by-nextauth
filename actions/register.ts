@@ -47,10 +47,13 @@ export const register = async (data: z.infer<typeof RegisterSchema>) => {
       },
     });
 
-    const verificationToken = await generateVerificationToken(email, createdUser.id);
+    const verificationToken = await generateVerificationToken(
+      email,
+      createdUser.id
+    );
 
     // Send the verification email:
-    const mailResponse = await sendVerificationEmail({
+    await sendVerificationEmail({
       email: verificationToken.email,
       token: verificationToken.token,
       title: "Email Confirmation - NextAuth",
@@ -58,13 +61,10 @@ export const register = async (data: z.infer<typeof RegisterSchema>) => {
       type: "VERIFY",
     });
 
-    console.log("Mailresponse in register: ", mailResponse);
-
     return {
       success: "Confirmation email has been sent to your email.",
     };
   } catch (error) {
-    console.log(error);
     return {
       error: "Some error occurred while registering!",
     };
