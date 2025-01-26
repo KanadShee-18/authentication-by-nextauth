@@ -11,11 +11,9 @@ import {
   generateTwoFactorToken,
 } from "@/lib/tokens";
 import { sendVerificationEmail } from "@/lib/mailsender";
-import {
-  getTwoFactorTokenByEmail,
-  getTwoFactorTokenByToken,
-} from "@/data/two-factor-token";
+import { getTwoFactorTokenByEmail } from "@/data/two-factor-token";
 import { getTwoFactorConfirmationByUserId } from "@/data/two-factor-confirmation";
+import bcrypt from "bcryptjs";
 
 export const login = async (data: z.infer<typeof LoginSchema>) => {
   const validatedData = LoginSchema.parse(data);
@@ -54,6 +52,18 @@ export const login = async (data: z.infer<typeof LoginSchema>) => {
     return {
       success: "Confirmation email sent successfully!",
     };
+  }
+
+  if (userExistance.password) {
+    const passwordMatched = await bcrypt.compare(
+      password,
+      userExistance.password
+    );
+    if (!passwordMatched) {
+      return {
+        error: "Please enter correct password!",
+      };
+    }
   }
 
   if (userExistance.isTwoFactorEnabled && userExistance.email) {
