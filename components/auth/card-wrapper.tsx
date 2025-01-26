@@ -33,7 +33,7 @@ const CardWrapper = ({
   fgtPasswordText = "",
 }: CardWrapperProps) => {
   return (
-    <Card className="w-10/12 relative sm:w-3/4 md:w-1/2 xl:w-1/4 mx-auto">
+    <Card className="w-10/12 relative sm:w-3/4 md:w-1/2 xl:w-1/4 mx-auto min-w-[350px]">
       <CardHeader>
         <AuthHeader headerLabel={headerLabel} title={title} />
       </CardHeader>

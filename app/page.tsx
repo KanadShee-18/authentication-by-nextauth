@@ -6,6 +6,7 @@ import loginImg from "@/public/login.png";
 import RegisterImg from "@/public/register.png";
 import SettingsImg from "@/public/settings.png";
 import CSImg from "@/public/cs.png";
+import LoginButton from "@/components/auth/login-button";
 
 export default function Home() {
   return (
@@ -16,17 +17,19 @@ export default function Home() {
           <div className="text-5xl md:text-6xl lg:text-8xl z-[100] font-extrabold bg-gradient-to-r from-rose-500 via-indigo-500 to-slate-400 text-transparent bg-clip-text">
             Next-Auth
           </div>
-          <p className="text-center z-[100] font-medium text-xl px-10 md:text-3xl text-transparent bg-gradient-to-r from-slate-300 via-indigo-400 to-purple-400 bg-clip-text">
+          <p className="text-center z-[100] pb-10 font-medium text-xl px-10 md:text-3xl text-transparent bg-gradient-to-r from-slate-300 via-indigo-400 to-purple-400 bg-clip-text">
             A simple authentication application using Auth.js v5
           </p>
-          <Button
-            variant={"destructive"}
-            className="w-[150px] z-[100] relative bg-gradient-to-r from-indigo-600 via-indigo-800 to-slate-600 text-lg h-[45px]
+          <LoginButton asChild mode="modal">
+            <Button
+              variant={"destructive"}
+              className="w-[150px] z-[100] relative bg-gradient-to-r from-indigo-600 via-indigo-800 to-slate-600 text-lg h-[45px]
             hover:scale-95 duration-300 transition-all hover:bg-gradient-to-l hover:from-indigo-600 hover:via-indigo-800 hover:to-slate-600
             "
-          >
-            <Link href={"/auth/login"}>Sign In</Link>
-          </Button>
+            >
+              Sign In
+            </Button>
+          </LoginButton>
         </div>
         <div className="absolute w-3/5 -top-10 aspect-square rounded-full bg-emerald-400 bg-opacity-30 blur-[170px] z-[40]" />
       </div>

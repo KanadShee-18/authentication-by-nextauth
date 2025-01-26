@@ -93,7 +93,7 @@ const LoginForm = () => {
                   name="code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-blue-500">
+                      <FormLabel className="text-blue-500 text-start">
                         Two Factor Code
                       </FormLabel>
                       <FormControl>
@@ -118,7 +118,9 @@ const LoginForm = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-blue-500">Email</FormLabel>
+                      <FormLabel className="text-blue-500 text-start">
+                        Email
+                      </FormLabel>
                       <FormControl>
                         <Input
                           {...field}
