@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Link from "next/link";
 import loginImg from "@/public/login.png";
 import RegisterImg from "@/public/register.png";
 import SettingsImg from "@/public/settings.png";
@@ -20,7 +19,7 @@ export default function Home() {
           <p className="text-center z-[100] pb-10 font-medium text-xl px-10 md:text-3xl text-transparent bg-gradient-to-r from-slate-300 via-indigo-400 to-purple-400 bg-clip-text">
             A simple authentication application using Auth.js v5
           </p>
-          <LoginButton asChild mode="modal">
+          <LoginButton mode="modal">
             <Button
               variant={"destructive"}
               className="w-[150px] z-[100] relative bg-gradient-to-r from-indigo-600 via-indigo-800 to-slate-600 text-lg h-[45px]

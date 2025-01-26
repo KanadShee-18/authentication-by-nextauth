@@ -8,14 +8,9 @@ import LoginForm from "@/components/auth/login-form";
 interface LoginButtonProps {
   children: React.ReactNode;
   mode?: "modal" | "redirect";
-  asChild?: boolean;
 }
 
-const LoginButton = ({
-  children,
-  asChild,
-  mode = "redirect",
-}: LoginButtonProps) => {
+const LoginButton = ({ children, mode = "redirect" }: LoginButtonProps) => {
   const router = useRouter();
   const [showDialog, setShowDialog] = useState(false);
 
