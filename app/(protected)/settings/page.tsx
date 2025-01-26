@@ -26,6 +26,7 @@ import FormError from "@/components/auth/form-error";
 
 import { Switch } from "@/components/ui/switch";
 import { BeatLoader } from "react-spinners";
+import { toast } from "sonner";
 
 const SettingsPage = () => {
   const { update } = useSession();
@@ -67,6 +68,7 @@ const SettingsPage = () => {
       .then((data) => {
         if (data?.error) {
           setError(data.error);
+          toast.error("Problem occurred in updating settings.");
         }
         if (data?.success) {
           update();

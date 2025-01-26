@@ -1,10 +1,11 @@
 import authConfig from "./auth.config";
 import NextAuth from "next-auth";
+
 import {
-  AUTH_LOGIN,
   DEFAULT_LOGIN_REDIRECT,
-  isEmailConfirmationRoute,
-  privateRoutes,
+  apiAuthPrefix,
+  authRoutes,
+  publicRoutes,
 } from "@/routes";
 
 const { auth } = NextAuth(authConfig);
@@ -15,25 +16,30 @@ export default auth(async (req) => {
   const isLoggedIn = !!req.auth;
   const { nextUrl } = req;
 
-  const isPrivateRoutes = privateRoutes.includes(nextUrl.pathname);
-  const isAuthRoute = nextUrl.pathname.includes("/auth");
-  const isApiRoute = nextUrl.pathname.includes("/api");
+  const isApiAuthRoute = nextUrl.pathname.startsWith(apiAuthPrefix);
+  const isPublicRoute = publicRoutes.includes(nextUrl.pathname);
+  const isAuthRoute = authRoutes.includes(nextUrl.pathname);
 
-  if (isApiRoute) {
+  if (isApiAuthRoute) {
     return;
   }
-  if (isEmailConfirmationRoute) {
+  if (isAuthRoute) {
+    if (isLoggedIn) {
+      return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+    }
     return;
   }
-  if (isLoggedIn && isAuthRoute) {
-    return Response.redirect(new URL(DEFAULT_LOGIN_REDIRECT, nextUrl));
+  if (!isLoggedIn && !isPublicRoute) {
+    let callbackUrl = nextUrl.pathname;
+    if (nextUrl.search) {
+      callbackUrl += nextUrl.search;
+    }
+    const encodedCallbackUrl = encodeURIComponent(callbackUrl);
+    return Response.redirect(
+      new URL(`/auth/login?callbackUrl=${encodedCallbackUrl}`, nextUrl)
+    );
   }
-  if (isAuthRoute && !isLoggedIn) {
-    return;
-  }
-  if (!isLoggedIn && isPrivateRoutes) {
-    return Response.redirect(new URL(AUTH_LOGIN, nextUrl));
-  }
+  return;
 });
 
 export const config = {

@@ -4,6 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import loginImg from "@/public/login.png";
 import RegisterImg from "@/public/register.png";
+import SettingsImg from "@/public/settings.png";
+import CSImg from "@/public/cs.png";
+
 export default function Home() {
   return (
     <div className="w-full min-h-screen flex items-center justify-center flex-col">
@@ -41,7 +44,21 @@ export default function Home() {
           className="opacity-50 w-[200px] md:w-[250px] h-auto rotate-12"
         />
       </div>
-      <div className="absolute z-[8] w-3/5 -top-1/2 aspect-square rounded-full bg-indigo-400 opacity-30 blur-[140px]" />
+      <div className="fixed flex w-full justify-around z-[30] bottom-10">
+        <Image
+          src={SettingsImg}
+          alt="register"
+          quality={100}
+          className="opacity-60 w-[200px] md:w-[250px] h-auto"
+        />
+        <Image
+          src={CSImg}
+          alt="clientserver"
+          quality={100}
+          className="opacity-50 w-[200px] md:w-[250px] h-auto"
+        />
+      </div>
+      <div className="absolute z-[8] w-3/5 -top-1/2 aspect-square rounded-full bg-indigo-400 opacity-15 blur-[140px]" />
     </div>
   );
 }

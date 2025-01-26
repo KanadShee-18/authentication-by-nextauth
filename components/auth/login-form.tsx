@@ -40,7 +40,7 @@ const LoginForm = () => {
   const handleOnSubmit = async (data: z.infer<typeof LoginSchema>) => {
     setLoading(true);
     login(data).then((res) => {
-      if (res.error) {
+      if (res?.error) {
         setLoading(false);
         form.reset();
         setError(res.error);
@@ -76,7 +76,7 @@ const LoginForm = () => {
       }
       backButtonHref={showTwoFactor ? "/auth/login" : "/auth/register"}
       fgtPasswordHref="/auth/reset"
-      fgtPasswordText="Forget Password"
+      fgtPasswordText={showTwoFactor ? "" : "Forget Password"}
       showSocials={showTwoFactor ? false : true}
     >
       <Form {...form}>
