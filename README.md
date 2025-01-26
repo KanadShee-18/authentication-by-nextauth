@@ -1076,11 +1076,18 @@ export const {
 - Now, we will make another file named **routes.ts** where we can specify our all private, public and auth routes like this:
 
 ```ts
-export const privateRoutes = ["/dashboard"];
+export const DEFAULT_LOGIN_REDIRECT = "/settings";
 
-export const DEFAULT_LOGIN_REDIRECT = "/dashboard";
+export const publicRoutes = ["/", "/auth/email-confirmation"];
 
-export const AUTH_LOGIN = "/auth/login";
+export const authRoutes = [
+  "/auth/login",
+  "/auth/register",
+  "/auth/reset",
+  "/auth/new-password",
+];
+
+export const apiAuthPrefix = "/api/auth";
 ```
 
 - Now, in our **middleware.ts** file we can use these routes.
@@ -1138,7 +1145,6 @@ export const config = {
     "/(api|trpc)(.*)",
   ],
 };
-
 ```
 
 - Here the middleware run in all routes matching with the matcher config.
