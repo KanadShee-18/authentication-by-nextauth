@@ -47,6 +47,11 @@
 
 ---
 
+- [Point to be Noted](#things-to-remember)
+  1. [next-auth.d.ts file configuration](#next-authdts)
+
+---
+
 ## Initialize an empty next-js project
 
 ```
@@ -1989,3 +1994,68 @@ Validate 2FA code
 
 ---
 
+### Now, here the full Next-Auth is done properly and now some extra frontend staffs are done
+
+---
+
+## Things to remember:
+
+- ### next-auth.d.ts:
+
+```ts
+ async session({ token, session }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.sub,
+          name: token.name,
+          email: token.email,
+          isOauth: token.isOauth,
+          isTwoFactorEnabled: token.isTwoFactorEnabled,
+        },
+      };
+```
+
+- Here, we have added some more user details in session in **auth.ts** file.
+- So, according to the documentation of Auth.js, we can add one more file **next-auth.d.ts** file and there we can add those fields types in the user and can export that and can be used throughout the application.
+
+- For ex:
+
+```ts
+import NextAuth, { type DefaultSession } from "next-auth";
+
+export type ExtendedUser = DefaultSession["user"] & {
+  isOauth: boolean;
+  isTwoFactorEnabled: boolean;
+};
+
+declare module "next-auth" {
+  interface Session {
+    user: ExtendedUser;
+  }
+}
+```
+
+- And now, we can use this file in our components
+
+```tsx
+import { ExtendedUser } from "@/next-auth";
+import { Badge } from "@/components/ui/badge";
+
+interface UserInfoProps {
+  user?: ExtendedUser;
+  label: string;
+}
+```
+
+- Here just how we have used it in user-info.tsx file in **uils/user-info.tsx** file.
+
+---
+
+### So, this way we can use next-auth in our project and after deployment don't forget to change the callback url and homepage url in GitHub and Google Console OAuth configuration.
+
+- ### If you guys like this, star this repo and make use of it. I'll update this repo as well if any changes occur in next-auth in future.
+
+- ### Please Follow me! Check out my projects.
+- ### Thank You!!!
