@@ -736,8 +736,8 @@ export default {
         if (!user || !user.password || !user.email) {
           return null;
         }
-        const passwordMached = await bcrypt.compare(password, user.password);
-        if (passwordMached) {
+        const passwordMatched = await bcrypt.compare(password, user.password);
+        if (passwordMatched) {
           return user;
         }
         return null;
